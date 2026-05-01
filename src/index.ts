@@ -224,7 +224,7 @@ export const OpenCodeMemPlugin: Plugin = async (ctx: PluginInput) => {
             text: memoryContext,
             synthetic: true,
           } as any;
-          output.parts.unshift(contextPart);
+          output.parts.push(contextPart);
         }
       } catch (error) {
         log("chat.message: ERROR", { error: String(error) });
@@ -507,6 +507,16 @@ export const OpenCodeMemPlugin: Plugin = async (ctx: PluginInput) => {
 
       if (event.type === "session.compacted") {
         if (!isConfigured() || !CONFIG.compaction.enabled) return;
+
+        // When OmO is present (selfRestore=false), skip self-injection.
+        // OmO's compaction-context-injector owns the lifecycle and can
+        // pull memories via the `memory` tool's `search` mode instead.
+        if (!CONFIG.compaction.selfRestore) {
+          log("Compaction self-restore skipped (OmO compatibility mode)", {
+            sessionID: event.properties?.sessionID,
+          });
+          return;
+        }
 
         const sessionID = event.properties?.sessionID;
         if (!sessionID) return;

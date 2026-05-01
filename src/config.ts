@@ -69,6 +69,7 @@ interface OpenCodeMemConfig {
   compaction?: {
     enabled?: boolean;
     memoryLimit?: number;
+    selfRestore?: boolean;
   };
   chatMessage?: {
     enabled?: boolean;
@@ -116,8 +117,10 @@ const DEFAULTS: Required<
   };
 } = {
   storagePath: join(DATA_DIR, "data"),
-  embeddingModel: "Xenova/nomic-embed-text-v1",
-  embeddingDimensions: 768,
+  embeddingModel: "embedding-3",
+  embeddingApiUrl: "https://open.bigmodel.cn/api/paas/v4",
+  embeddingApiKey: "env://EMBEDDING_API_KEY",
+  embeddingDimensions: 2048,
   similarityThreshold: 0.6,
   maxMemories: 10,
   maxProfileItems: 5,
@@ -151,6 +154,7 @@ const DEFAULTS: Required<
   compaction: {
     enabled: true,
     memoryLimit: 10,
+    selfRestore: false,
   },
   chatMessage: {
     enabled: true,
@@ -477,6 +481,9 @@ function getEmbeddingDimensions(model: string): number {
     "text-embedding-004": 768,
     "text-multilingual-embedding-002": 768,
 
+    // Zhipu (智谱) models
+    "embedding-3": 2048,
+
     // Voyage AI models
     "voyage-3": 1024,
     "voyage-3-lite": 512,
@@ -554,6 +561,7 @@ function buildConfig(fileConfig: OpenCodeMemConfig) {
     compaction: {
       enabled: fileConfig.compaction?.enabled ?? DEFAULTS.compaction.enabled,
       memoryLimit: fileConfig.compaction?.memoryLimit ?? DEFAULTS.compaction.memoryLimit,
+      selfRestore: fileConfig.compaction?.selfRestore ?? DEFAULTS.compaction.selfRestore,
     },
     chatMessage: {
       enabled: fileConfig.chatMessage?.enabled ?? DEFAULTS.chatMessage.enabled,
