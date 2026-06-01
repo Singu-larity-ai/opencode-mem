@@ -66,6 +66,31 @@ export class AISessionManager {
     this.db.run(
       "CREATE INDEX IF NOT EXISTS idx_ai_messages_role ON ai_messages(ai_session_id, role)"
     );
+
+    // Auto-migrate: add missing columns for upgraded installations
+    this.runMigrations();
+  }
+
+  private runMigrations(): void {
+    const columns = this.getTableColumns("ai_messages");
+    const migrations: Record<string, string> = {
+      tool_call_id: "ALTER TABLE ai_messages ADD COLUMN tool_call_id TEXT",
+      content_blocks: "ALTER TABLE ai_messages ADD COLUMN content_blocks TEXT",
+    };
+    for (const [col, sql] of Object.entries(migrations)) {
+      if (!columns.includes(col)) {
+        try {
+          this.db.run(sql);
+        } catch {
+          // Column may have been added by a concurrent process, ignore
+        }
+      }
+    }
+  }
+
+  private getTableColumns(table: string): string[] {
+    const rows = this.db.prepare(`PRAGMA table_info(${table})`).all() as any[];
+    return rows.map((r) => r.name);
   }
 
   getSession(sessionId: string, provider: AIProviderType): AISession | null {
