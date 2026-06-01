@@ -185,12 +185,20 @@ export const OpenCodeMemPlugin: Plugin = async (ctx: PluginInput) => {
 
         if (!shouldInject) return;
 
-        const listResult = await memoryClient.listMemories(
+        const allMemoriesResult = await memoryClient.listMemories(
           tags.project.tag,
-          CONFIG.chatMessage.maxMemories
+          100,
+          "all-projects"
         );
 
-        let memories = listResult.success ? listResult.memories : [];
+        const allMemories = allMemoriesResult.success ? allMemoriesResult.memories : [];
+
+        const coreMemories = allMemories.filter((m: any) => m.tags?.includes("core-memory"));
+
+        let memories =
+          coreMemories.length > 0
+            ? coreMemories
+            : allMemories.slice(0, CONFIG.chatMessage.maxMemories);
 
         if (CONFIG.chatMessage.excludeCurrentSession) {
           memories = memories.filter((m: any) => m.metadata?.sessionID !== input.sessionID);
